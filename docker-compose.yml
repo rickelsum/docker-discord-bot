@@ -1,0 +1,46 @@
+version: "3"
+
+networks:
+  web:
+    external: true
+  internal:
+    external: false
+
+services:
+  
+  ### Traefik ############################################
+  traefik:
+    image: traefik:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock 
+      - $PWD/traefik.toml:/traefik.toml 
+      - $PWD/traefik_dynamic.toml:/traefik_dynamic.toml
+      - $PWD/acme.json:/acme.json 
+    ports:
+      - 80:80
+      - 443:443
+    labels:
+      - traefik.port=8080
+    networks:
+      - web
+    restart: always
+
+
+  ### Portainer ############################################
+  portainer:
+    image: portainer/portainer:latest
+    labels:
+      - traefik.http.routers.portainer.rule=Host(`containers.${APP_HOST}`)
+      - traefik.http.routers.portainer.tls=true
+      - traefik.http.routers.portainer.tls.certresolver=lets-encrypt
+      - traefik.port=9000
+    networks:
+      - internal
+      - web
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA}/portainer:/data
+    restart: always
+
+    
+
